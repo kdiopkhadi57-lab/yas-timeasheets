@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: timesheet
+      POSTGRES_USER: timesheet
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-timesheet}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    depends_on: [db]
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/timesheet
+      DB_USER: timesheet
+      DB_PASSWORD: ${DB_PASSWORD:-timesheet}
+      JWT_SECRET: ${JWT_SECRET:-change-me-yas-itfactory-timesheet-secret-key-2026}
+      APP_SEED: ${APP_SEED:-true}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8081}
+      CORS_ORIGINS: ${FRONTEND_URL:-http://localhost:8081}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      MAIL_HOST: ${MAIL_HOST:-smtp.office365.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@yas-itfactory.sn}
+      GITLAB_URL: ${GITLAB_URL:-https://it-gitlab.yas.sn}
+      GITLAB_TOKEN: ${GITLAB_TOKEN:-}
+      GITLAB_GROUPS: ${GITLAB_GROUPS:-}
+    volumes:
+      - backend-data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on: [backend]
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  backend-data:

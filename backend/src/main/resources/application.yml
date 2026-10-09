@@ -1,0 +1,88 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: yas-timesheet
+  datasource:
+    url: ${DB_URL:jdbc:h2:file:./data/timesheet;AUTO_SERVER=TRUE}
+    username: ${DB_USER:sa}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  h2:
+    console:
+      enabled: true
+  servlet:
+    multipart:
+      # Documents de projet : Word, Excel, PDF, archives de code…
+      max-file-size: ${DOCUMENTS_MAX_FILE_SIZE:100MB}
+      max-request-size: ${DOCUMENTS_MAX_REQUEST_SIZE:300MB}
+  jackson:
+    time-zone: Africa/Dakar
+  mail:
+    host: ${MAIL_HOST:smtp.office365.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USER:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+logging:
+  level:
+    # PDFBox inventorie les polices du système au premier PDF et journalise des polices qu'il ne sait pas lire.
+    org.apache.fontbox: OFF
+    org.apache.pdfbox.pdmodel.font: ERROR
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+  health:
+    # Le SMTP n'est pas joignable en local (MAIL_ENABLED=false) : ne pas déclarer l'application DOWN pour autant.
+    mail:
+      enabled: false
+
+app:
+  seed: ${APP_SEED:true}
+  frontend-url: ${FRONTEND_URL:http://localhost:4300}
+  jwt:
+    # À remplacer en production (au moins 32 caractères).
+    secret: ${JWT_SECRET:change-me-yas-itfactory-timesheet-secret-key-2026}
+    expiration-hours: 12
+  mail:
+    # false : les e-mails sont écrits dans data/outbox au lieu d'être envoyés.
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:no-reply@yas-itfactory.sn}
+  documents:
+    dir: ${DOCUMENTS_DIR:./data/documents}
+  invoice:
+    client: ${INVOICE_CLIENT:SAGA AFRICA HOLDINGS LIMITED SA}
+    prefix: ${INVOICE_PREFIX:CONST-IT}
+    # Retenue sur les honoraires bruts : brut = net / (1 - taux).
+    withholding-rate: ${INVOICE_WITHHOLDING_RATE:0.05}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:4300}
+  gitlab:
+    url: ${GITLAB_URL:https://it-gitlab.yas.sn}
+    # Jeton (groupe ou personnel) avec le droit read_api.
+    token: ${GITLAB_TOKEN:}
+    # Groupes suivis, séparés par des virgules (ex. numflex,NUMBER-ONE). Vide : tous les dépôts du jeton.
+    groups: ${GITLAB_GROUPS:}
+    # Référence des tâches à mettre dans la branche, la MR ou le commit : TS-42.
+    task-prefix: ${GITLAB_TASK_PREFIX:TS}
+    initial-days: 60
+  schedule:
+    gitlab-sync: "0 */15 * * * *"
+    weekly-reminder: "0 0 16 * * THU"
+    weekly-reminder-last-call: "0 0 10 * * FRI"
+    monthly-reminder: "0 0 10 18,19 * *"
+    weekly-digest: "0 0 18 * * FRI"
+    monthly-digest: "0 0 8 20 * *"
